@@ -4,7 +4,7 @@
       class="form-container"
       ref="hotelEditInfoForm"
       :model="hotelEditInfoForm"
-      :rules="hotelEditInfoForm"
+      :rules="hotelEditInfoFormRules"
       label-width="auto"
     >
       <el-form-item label="酒店名称" prop="name">
@@ -52,6 +52,27 @@
 export default {
   name: 'HotelInfo',
   data() {
+    var checkHotelName = (rule, value, callback) => {
+      if (!value) {
+        return callback(new Error('请输入酒店名称'))
+      } else if (value === this.hotelOriginalName) {
+        callback()
+      } else {
+        this.$http
+          .get('/hotel/check-name', { params: { name: value } })
+          .then((res) => {
+            if (res.data.exist === 0) {
+              callback()
+            } else {
+              callback(new Error('酒店名称已经被注册了'))
+            }
+          })
+          .catch((err) => {
+            callback(new Error('网络错误'))
+            throw err
+          })
+      }
+    }
     return {
       hotelEditInfoForm: {
         name: '',
@@ -60,98 +81,158 @@ export default {
         district: '',
         address: '',
       },
+      hotelOriginalName: '',
+      hotelEditInfoFormRules: {
+        name: [{ required: true, validator: checkHotelName, trigger: 'blur' }],
+        province: [{ required: true, message: '请选择省份', trigger: 'blur' }],
+        city: [{ required: true, message: '请选择城市', trigger: 'blur' }],
+        district: [{ required: true, message: '请选择区/县', trigger: 'blur' }],
+        address: [
+          { required: true, message: '请输入详细地址', trigger: 'blur' },
+        ],
+      },
       provinces: [],
       cities: [],
       districts: [],
     }
   },
   methods: {
+    token() {
+      return localStorage.getItem('token')
+    },
     submit(formName) {
       this.$refs[formName].validate((valid) => {
-        console.log('submit', valid)
+        if (!valid) return
+        let config = {
+          headers: { Authorization: `Bearer ${this.token()}` },
+        }
+        this.$http
+          .post('/hotel/edit-profile', this.hotelEditInfoForm, config)
+          .then((res) => {
+            if (res.data.state === 1) {
+              this.$message.success('修改成功')
+            } else {
+              this.$message.error(res.data.msg)
+            }
+          })
+          .catch((err) => {
+            this.$message.error('网络错误')
+            throw err
+          })
+      })
+    },
+    getHotelInfo() {
+      let config = { headers: { Authorization: `Bearer ${this.token()}` } }
+      this.$http
+        .post('/hotel', {}, config)
+        .then(async (res) => {
+          if (res.data.state === 1) {
+            this.hotelEditInfoForm = res.data.hotelProfile
+            this.hotelOriginalName = res.data.hotelProfile.name
+          } else {
+            this.$message.error(res.data.err)
+          }
+        })
+        .catch((err) => {
+          this.$message.error('网络错误')
+          throw err
+        })
+    },
+    getProvinces() {
+      //挂载时获取省级行政区
+      new Promise((resolve, reject) => {
+        this.$http
+          .get('https://restapi.amap.com/v3/config/district', {
+            params: {
+              key: process.env.VUE_APP_AMAPKEY,
+              keywords: name,
+              subdistrict: '1',
+            },
+          })
+          .then((res) => {
+            if (res.data.infocode === '10000') {
+              this.provinces = res.data.districts[0].districts.map((p) => {
+                return p.name
+              })
+              resolve()
+            } else {
+              this.$message.error(res.data.info)
+              reject(res.data.info)
+            }
+          })
+          .catch((err) => {
+            this.$message.error('网络存在异常，省级列表无法获取')
+            reject(err)
+            throw err
+          })
       })
     },
     getCities(name) {
       //name是省的名称
-      this.$http
-        .get('https://restapi.amap.com/v3/config/district', {
-          params: {
-            key: process.env.VUE_APP_AMAPKEY,
-            keywords: name,
-            subdistrict: '1',
-          },
-        })
-        .then((res) => {
-          if (res.data.infocode === '10000') {
-            this.cities = res.data.districts[0].districts.map((c) => {
-              return c.name
-            })
-            this.hotelEditInfoForm.city = ''
-            this.hotelEditInfoForm.district = ''
-            this.districts = []
-          } else {
-            this.$message.error(res.data.info)
-          }
-        })
-        .catch((err) => {
-          this.$message.error('网络存在异常，获取市级列表失败')
-          throw err
-        })
+      new Promise((resolve, reject) => {
+        this.$http
+          .get('https://restapi.amap.com/v3/config/district', {
+            params: {
+              key: process.env.VUE_APP_AMAPKEY,
+              keywords: name,
+              subdistrict: '1',
+            },
+          })
+          .then((res) => {
+            if (res.data.infocode === '10000') {
+              this.cities = res.data.districts[0].districts.map((c) => {
+                return c.name
+              })
+              this.hotelEditInfoForm.city = ''
+              this.hotelEditInfoForm.district = ''
+              this.districts = []
+              resolve()
+            } else {
+              this.$message.error(res.data.info)
+              reject(res.data.info)
+            }
+          })
+          .catch((err) => {
+            this.$message.error('网络存在异常，获取市级列表失败')
+            reject(err)
+            throw err
+          })
+      })
     },
     getDistricts(name) {
       //name是市的名称
-      this.$http
-        .get('https://restapi.amap.com/v3/config/district', {
-          params: {
-            key: process.env.VUE_APP_AMAPKEY,
-            keywords: name,
-            subdistrict: '1',
-          },
-        })
-        .then((res) => {
-          if (res.data.infocode === '10000') {
-            this.districts = res.data.districts[0].districts.map((d) => {
-              return d.name
-            })
-            this.hotelEditInfoForm.district = ''
-          } else {
-            this.$message.error(res.data.info)
-          }
-        })
-        .catch((err) => {
-          this.$message.error('网络存在异常，获取区/县列表失败')
-          throw err
-        })
+      new Promise((resolve, reject) => {
+        this.$http
+          .get('https://restapi.amap.com/v3/config/district', {
+            params: {
+              key: process.env.VUE_APP_AMAPKEY,
+              keywords: name,
+              subdistrict: '1',
+            },
+          })
+          .then((res) => {
+            if (res.data.infocode === '10000') {
+              this.districts = res.data.districts[0].districts.map((d) => {
+                return d.name
+              })
+              this.hotelEditInfoForm.district = ''
+              resolve()
+            } else {
+              this.$message.error(res.data.info)
+              reject(res.data.info)
+            }
+          })
+          .catch((err) => {
+            this.$message.error('网络存在异常，获取区/县列表失败')
+            reject(err)
+            throw err
+          })
+      })
     },
   },
   mounted() {
-    //挂载时获取省级行政区
-    this.$http
-      .get('https://restapi.amap.com/v3/config/district', {
-        params: {
-          key: process.env.VUE_APP_AMAPKEY,
-          keywords: '100000',
-          subdistrict: '1',
-        },
-      })
-      .then((res) => {
-        if (res.data.infocode === '10000') {
-          this.provinces = res.data.districts[0].districts.map((p) => {
-            return p.name
-          })
-        } else {
-          this.$message.error(res.data.info)
-        }
-      })
-      .catch((err) => {
-        this.$message.error('网络存在异常，省级列表无法获取')
-        throw err
-      })
-    this.hotelEditInfoForm.name = this.$store.state.hotelProfile.name
-    this.hotelEditInfoForm.province = this.$store.state.hotelProfile.province
-    this.hotelEditInfoForm.city = this.$store.state.hotelProfile.city
-    this.hotelEditInfoForm.district = this.$store.state.hotelProfile.district
-    this.hotelEditInfoForm.address = this.$store.state.hotelProfile.address
+    this.getHotelInfo()
+    this.getProvinces()
   },
 }
 </script>

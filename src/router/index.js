@@ -8,7 +8,6 @@ const SignUp = () => import(/* webpackChunkName: "SignUp" */'../views/Home/child
 const Seller = () => import(/* webpackChunkName: "Seller" */'../views/Seller/Seller.vue')
 const SellerInfo = () => import(/* webpackChunkName: "SellerInfo" */'../views/Seller/children/SellerInfo.vue')
 const ProductOrderList = () => import(/* webpackChunkName: "ProductOrderList" */'../views/Seller/children/ProductOrderList.vue')
-const ProductOrder = () => import(/* webpackChunkName: "ProductOrder" */'../views/Seller/children/ProductOrder.vue')
 const ProductList = () => import(/* webpackChunkName: "ProductList" */'../views/Seller/children/ProductList.vue')
 const ProductEdit = () => import(/* webpackChunkName: "ProductEdit" */'../views/Seller/children/ProductEdit.vue')
 const Hotel = () => import(/* webpackChunkName: "Hotel" */'../views/Hotel/Hotel.vue')
@@ -41,7 +40,7 @@ const routes = [
   {
     path: '/seller',
     name: 'seller',
-    redirect: '/seller/info',
+    redirect: '/seller/product',
     component: Seller,
     children: [
       {
@@ -53,18 +52,9 @@ const routes = [
         }
       },
       {
-        path: 'order',
-        name: 'orderList',
+        path: 'product-order',
+        name: 'productOrderList',
         component: ProductOrderList,
-        meta: {
-          requireAuth: true,
-          userType: 'seller'
-        }
-      },
-      {
-        path: 'order/:id',
-        name: 'order',
-        component: ProductOrder,
         meta: {
           requireAuth: true,
           userType: 'seller'
@@ -163,7 +153,6 @@ const router = new VueRouter({
 
 //check auth
 router.beforeEach((to, from, next) => {
-  //遍历所有匹配到的路有记录
   if (to.meta.requireAuth) {
     if (store.state.isLogin && to.meta.userType === store.state.userType) {
       next()

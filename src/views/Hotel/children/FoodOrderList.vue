@@ -1,32 +1,37 @@
 <template>
-  <div class="order-list">
-    <el-card class="title">
+  <div class="list">
+    <!-- 表头 -->
+    <el-card class="list-title">
       <el-row :gutter="20">
-        <el-col :span="9" style="text-align:center">菜品</el-col>
-        <el-col :span="3">价格</el-col>
-        <el-col :span="3">数量</el-col>
-        <el-col :span="3">总价</el-col>
-        <el-col :span="3">支付状态</el-col>
-        <el-col :span="3">操作</el-col>
+        <el-col :span="7" style="text-align:center">菜品</el-col>
+        <el-col :span="5">菜品信息</el-col>
+        <el-col :span="2">价格</el-col>
+        <el-col :span="2">数量</el-col>
+        <el-col :span="2">总价</el-col>
+        <el-col :span="2">支付状态</el-col>
+        <el-col :span="2">客户名称</el-col>
+        <el-col :span="2">客户电话</el-col>
       </el-row>
     </el-card>
-    <el-card v-for="i in 6" :key="i" class="order-card">
-      <div slot="header" class="header">
-        <span>下单时间：{{new Date().getFullYear()}}</span>
-        <span style="margin-left:40px">订单编号：1115515778048619850</span>
+
+    <!-- 列表 -->
+    <el-card v-for="foodOrder in foodOrders" :key="foodOrder._id" class="list-card">
+      <div slot="header" class="list-card-header">
+        <span>下单时间：{{DateTimeFormatter(foodOrder.time)}}</span>
+        <span style="margin-left:40px">订单编号：{{foodOrder._id}}</span>
       </div>
-      <el-row class="body" :gutter="20">
-        <el-col :span="3">
-          <img :src="img" alt class="img" />
+      <el-row class="list-card-body" :gutter="20">
+        <el-col :span="4">
+          <img :src="imgURL(foodOrder.food.imgSrc)" alt class="list-card-img" />
         </el-col>
-        <el-col :span="6">foodName</el-col>
-        <el-col :span="3">foodPrice</el-col>
-        <el-col :span="3">quantity</el-col>
-        <el-col :span="3">totalPrice</el-col>
-        <el-col :span="3">state</el-col>
-        <el-col :span="3">
-          <el-link>查看详情</el-link>
-        </el-col>
+        <el-col :span="3">{{foodOrder.food.name}}</el-col>
+        <el-col :span="5">{{foodOrder.food.information}}</el-col>
+        <el-col :span="2">{{foodOrder.food.price}}</el-col>
+        <el-col :span="2">{{foodOrder.quantity}}</el-col>
+        <el-col :span="2">{{foodOrder.totalPrice}}</el-col>
+        <el-col :span="2">{{foodOrder.state}}</el-col>
+        <el-col :span="2">{{foodOrder.user.name}}</el-col>
+        <el-col :span="2">{{foodOrder.user.phone}}</el-col>
       </el-row>
     </el-card>
   </div>
@@ -37,29 +42,69 @@ export default {
   name: 'FoodOrderList',
   data() {
     return {
-      img: '',
+      foodOrders: [],
     }
+  },
+  methods: {
+    token() {
+      return localStorage.getItem('token')
+    },
+    imgURL(imgSrc) {
+      return process.env.VUE_APP_SERVER_URL + '/public/' + imgSrc
+    },
+    DateTimeFormatter(value) {
+      let date = new Date(value)
+      let year = date.getFullYear()
+      let month = date.getMonth() + 1
+      let day = date.getDate()
+      let hours = date.getHours()
+      let min = date.getMinutes()
+      return year + '年' + month + '月' + day + '日' + hours + ':' + min
+    },
+  },
+  mounted() {
+    this.$http
+      .post(
+        '/foodOrder/manage',
+        {},
+        {
+          headers: { Authorization: `Bearer ${this.token()}` },
+        }
+      )
+      .then((res) => {
+        if (res.data.state === 1) {
+          this.foodOrders = res.data.foodOrders
+        } else {
+          this.$message.error('获取菜品订单失败')
+        }
+      })
+      .catch((err) => {
+        this.$message.error('网络错误')
+        throw err
+      })
   },
 }
 </script>
 
 <style scoped>
-.order-list {
-  min-width: 1002px;
+.list {
+  width: 1200px;
 }
-.order-list .title {
-  font-size: 12px;
+.list-title {
+  font-size: 14px;
   margin-bottom: 20px;
+  position: sticky;
+  top: -20px;
+  z-index: 1;
 }
-.order-card {
+.list-card {
   margin-bottom: 20px;
   font-size: 12px;
 }
-.order-card .img {
-  width: 100px;
-  height: 100px;
+.list-card-img {
+  width: 100%;
 }
-.order-card .body {
+.list-card-body {
   word-break: break-all;
 }
 </style>

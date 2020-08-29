@@ -1,7 +1,7 @@
 <template>
   <div class="sign-up">
     <!--步骤条-->
-    <el-steps :active="active" finish-status="success">
+    <el-steps :active="step" finish-status="success">
       <el-step title="是否已经注册"></el-step>
       <el-step title="注册/登录"></el-step>
       <el-step title="选择用户类型"></el-step>
@@ -10,20 +10,21 @@
     </el-steps>
 
     <!-- 之前是否在APP注册过 -->
-    <el-form v-if="active===0" class="form-container" key="0">
+    <el-form v-if="step===0" key="0" class="form-container">
       <el-form-item label="是否已经注册">
-        <el-select v-model="selectedIsRegistered">
-          <el-option v-for="option in isRegistered" :key="option" :label="option" :value="option"></el-option>
+        <el-select v-model="registered">
+          <el-option label="是" :value="true"></el-option>
+          <el-option label="否" :value="false"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button @click="active++">下一步</el-button>
+        <el-button @click="step++">下一步</el-button>
       </el-form-item>
     </el-form>
 
     <!-- 用户登录 -->
     <el-form
-      v-else-if="active===1&&selectedIsRegistered==='是'"
+      v-if="step===1&&registered"
       key="1"
       :model="userLoginForm"
       :rules="userLoginFormRules"
@@ -38,14 +39,14 @@
         <el-input v-model="userLoginForm.password" type="password"></el-input>
       </el-form-item>
       <el-form-item>
-        <el-button @click="active--">上一步</el-button>
+        <el-button @click="step--">上一步</el-button>
         <el-button type="primary" @click="userLogin('userLoginForm')">下一步</el-button>
       </el-form-item>
     </el-form>
 
     <!--用户注册-->
     <el-form
-      v-else-if="active===1&&selectedIsRegistered==='否'"
+      v-if="step===1&&!registered"
       key="2"
       class="form-container"
       ref="userSignUpForm"
@@ -66,26 +67,27 @@
         <el-input type="password" v-model="userSignUpForm.checkPassword"></el-input>
       </el-form-item>
       <el-form-item>
-        <el-button @click="active--">上一步</el-button>
+        <el-button @click="step--">上一步</el-button>
         <el-button type="primary" @click="userSignUp('userSignUpForm')">下一步</el-button>
       </el-form-item>
     </el-form>
 
     <!-- 选择用户类型 -->
-    <el-form v-else-if="active===2" key="3" class="form-container" label-width="auto">
+    <el-form v-if="step===2" key="3" class="form-container" label-width="auto">
       <el-form-item label="用户类型" :rules="[{required:true,message:'请选择'}]">
         <el-select v-model="selectedUserType">
-          <el-option v-for="type in userTypes" :key="type" :label="type" :value="type"></el-option>
+          <el-option label="酒店" value="hotel"></el-option>
+          <el-option label="商家" value="seller"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="active++">下一步</el-button>
+        <el-button type="primary" @click="step++">下一步</el-button>
       </el-form-item>
     </el-form>
 
     <!-- 填写酒店用户资料 -->
     <el-form
-      v-else-if="active===3&&selectedUserType==='酒店'"
+      v-if="step===3&&selectedUserType==='hotel'"
       key="4"
       class="form-container"
       ref="hotelSignUpForm"
@@ -128,14 +130,14 @@
         <el-input v-model="hotelSignUpForm.address"></el-input>
       </el-form-item>
       <el-form-item>
-        <el-button @click="active--">上一步</el-button>
+        <el-button @click="step--">上一步</el-button>
         <el-button type="primary" @click="hotelSignUp('hotelSignUpForm')">下一步</el-button>
       </el-form-item>
     </el-form>
 
     <!-- 填写商家注册资料 -->
     <el-form
-      v-else-if="active===3&&selectedUserType==='商家'"
+      v-if="step===3&&selectedUserType==='seller'"
       key="5"
       class="form-container"
       ref="sellerSignUpForm"
@@ -178,26 +180,51 @@
         <el-input v-model="sellerSignUpForm.address"></el-input>
       </el-form-item>
       <el-form-item label="证书" prop="license">
+        <!-- 上传控件 -->
         <el-upload
-          :action="`${process.env.VUE_APP_SERVER_URL}/album/upload`"
+          ref="uploader"
+          v-if="!imgURL"
+          action="#"
+          :auto-upload="false"
+          list-type="picture-card"
           :show-file-list="false"
-          :on-success="handleUploadSuccess"
-          :before-upload="beforeUpload"
-          :headers="{Authorization:`Bearer ${token}`}"
-          name="image"
-          class="license-uploader"
+          :on-change="handleChange"
+          accept=".png, .jpg, .jpeg"
+          name="license"
         >
-          <img v-if="imgURL" :src="imgURL" class="license" />
-          <i v-else class="el-icon-plus license-uploader-icon"></i>
+          <i class="el-icon-plus"></i>
         </el-upload>
+
+        <!-- 选择文件之后隐藏上传控件 -->
+        <div v-else class="el-upload-list el-upload-list--picture-card">
+          <div class="el-upload-list__item is-success">
+            <img :src="imgURL" width="100%" />
+            <label class="el-upload-list__item-state-label">
+              <i class="el-icon-upload-success el-icon-check"></i>
+            </label>
+            <span class="el-upload-list__item-actions">
+              <span class="el-upload-list__item-delete">
+                <i class="el-icon-delete" @click.stop="handleRemove"></i>
+              </span>
+              <span class="el-upload-list__item-delete">
+                <i class="el-icon-zoom-in" @click.stop="handlePreview"></i>
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 预览对话框 -->
+        <el-dialog :visible.sync="dialogVisable">
+          <img :src="imgURL" width="100%" />
+        </el-dialog>
       </el-form-item>
       <el-form-item>
-        <el-button @click="active--">上一步</el-button>
+        <el-button @click="step--">上一步</el-button>
         <el-button type="primary" @click="sellerSignUp('sellerSignUpForm')">下一步</el-button>
       </el-form-item>
     </el-form>
 
-    <div v-else key="6" class="form-container">
+    <div v-if="step===4" key="6" class="form-container">
       <h1>恭喜你完成了注册</h1>
       <el-button @click="loginNow" type="primary">立即登录</el-button>
     </div>
@@ -305,15 +332,14 @@ export default {
       }
     }
     return {
-      active: 0,
-      imgURL: '',
-      userTypes: ['商家', '酒店'],
-      selectedUserType: '商家',
-      isRegistered: ['是', '否'],
-      selectedIsRegistered: '是',
+      step: 0,
+      dialogVisable: false,
+      selectedUserType: 'hotel',
+      registered: true,
       provinces: [],
       cities: [],
       districts: [],
+      imgURL: '',
       userLoginForm: {
         phone: '',
         password: '',
@@ -347,10 +373,18 @@ export default {
       },
       hotelSignUpFormRules: {
         name: [{ required: true, validator: checkHotelName, trigger: 'blur' }],
-        province: [{ required: true, message: '所在省份不能为空' }],
-        city: [{ required: true, message: '所在城市不能为空' }],
-        district: [{ required: true, message: '所在区/县不能为空' }],
-        address: [{ required: true, message: '详细地址不能为空' }],
+        province: [
+          { required: true, message: '所在省份不能为空', trigger: 'blur' },
+        ],
+        city: [
+          { required: true, message: '所在城市不能为空', trigger: 'blur' },
+        ],
+        district: [
+          { required: true, message: '所在区/县不能为空', trigger: 'blur' },
+        ],
+        address: [
+          { required: true, message: '详细地址不能为空', trigger: 'blur' },
+        ],
       },
       sellerSignUpForm: {
         name: '',
@@ -358,46 +392,44 @@ export default {
         city: '',
         district: '',
         address: '',
-        license: '',
+        license: null,
       },
       sellerSignUpFormRules: {
         name: [{ required: true, validator: checkSellerName, trigger: 'blur' }],
-        province: [{ required: true, message: '所在省份不能为空' }],
-        city: [{ required: true, message: '所在城市不能为空' }],
-        district: [{ required: true, message: '所在区/县不能为空' }],
-        address: [{ required: true, message: '详细地址不能为空' }],
-        license: [{ required: true, message: '证书不能为空' }],
+        province: [
+          { required: true, message: '所在省份不能为空', trigger: 'blur' },
+        ],
+        city: [
+          { required: true, message: '所在城市不能为空', trigger: 'blur' },
+        ],
+        district: [
+          { required: true, message: '所在区/县不能为空', trigger: 'blur' },
+        ],
+        address: [
+          { required: true, message: '详细地址不能为空', trigger: 'blur' },
+        ],
+        license: [{ required: true, message: '证书不能为空', trigger: 'blur' }],
       },
     }
   },
-  computed: {
-    token() {
-      return localStorage.getItem('token')
-    },
-  },
+  computed: {},
   methods: {
     resetForm(formName) {
       this.$refs[formName].resetFields()
     },
+    token() {
+      return localStorage.getItem('token')
+    },
     userSignUp(formName) {
       this.$refs[formName].validate((valid) => {
         if (!valid) return
-        const user = {
-          name: this.userSignUpForm.name,
-          phone: this.userSignUpForm.phone,
-          password: this.userSignUpForm.password,
-        }
         this.$http
-          .post('/user/sign-up', user)
+          .post('/user/sign-up', this.userSignUpForm)
           .then((res) => {
             if (res.data.state === 1) {
-              this.$store.commit('setUserLogin', {
-                name: res.data.user.name,
-                phone: res.data.user.phone,
-              })
               localStorage.setItem('token', res.data.token)
-              this.$message.success(res.data.msg)
-              this.active++
+              this.$message.success('用户注册成功')
+              this.step++
             } else {
               this.$message.error(res.data.msg)
             }
@@ -411,21 +443,13 @@ export default {
     userLogin(formName) {
       this.$refs[formName].validate((valid) => {
         if (!valid) return
-        const user = {
-          phone: this.userLoginForm.phone,
-          password: this.userLoginForm.password,
-        }
         this.$http
-          .post('/user/login', user)
+          .post('/user/login', this.userLoginForm)
           .then((res) => {
             if (res.data.state === 1) {
-              this.$store.commit('setUserLogin', {
-                name: res.data.user.name,
-                phone: res.data.user.phone,
-              })
               localStorage.setItem('token', res.data.token)
-              this.$message.success(res.data.msg)
-              this.active++
+              this.$message.success('用户登录成功')
+              this.step++
             } else {
               this.$message.error(res.data.msg)
             }
@@ -439,39 +463,23 @@ export default {
     sellerSignUp(formName) {
       this.$refs[formName].validate((valid) => {
         if (!valid) return
-        const sellerProfile = {
-          name: this.sellerSignUpForm.name,
-          province: this.sellerSignUpForm.province,
-          city: this.sellerSignUpForm.city,
-          district: this.sellerSignUpForm.district,
-          address: this.sellerSignUpForm.address,
-          licenseFileName: this.sellerSignUpForm.license,
+        let formData = new FormData()
+        for (let key in this.sellerSignUpForm) {
+          formData.append(key, this.sellerSignUpForm[key])
         }
-        const token = localStorage.getItem('token')
+        let config = {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Authorization: `Bearer ${this.token()}`,
+          },
+        }
         this.$http
-          .post('/seller/sign-up', sellerProfile, {
-            headers: { Authorization: 'Bearer ' + token },
-          })
+          .post('/seller/sign-up', formData, config)
           .then((res) => {
             if (res.data.state === 1) {
-              const {
-                name,
-                province,
-                city,
-                district,
-                address,
-                license,
-              } = res.data.sellerProfile
-              this.$store.commit('setSellerProfile', {
-                name,
-                province,
-                city,
-                district,
-                address,
-                license,
-              })
-              this.active++
-              this.$message.success(res.data.msg)
+              this.$message.success('商家注册成功')
+              this.$store.commit('setSellerLogin')
+              this.step++
             } else {
               this.$message.error(res.data.msg)
             }
@@ -485,36 +493,15 @@ export default {
     hotelSignUp(formName) {
       this.$refs[formName].validate((valid) => {
         if (!valid) return
-        const hotelProfile = {
-          name: this.hotelSignUpForm.name,
-          province: this.hotelSignUpForm.province,
-          city: this.hotelSignUpForm.city,
-          district: this.hotelSignUpForm.district,
-          address: this.hotelSignUpForm.address,
-        }
-        const token = localStorage.getItem('token')
         this.$http
-          .post('/hotel/sign-up', hotelProfile, {
-            headers: { Authorization: 'Bearer ' + token },
+          .post('/hotel/sign-up', this.hotelSignUpForm, {
+            headers: { Authorization: 'Bearer ' + this.token() },
           })
           .then((res) => {
             if (res.data.state === 1) {
-              const {
-                name,
-                province,
-                city,
-                district,
-                address,
-              } = res.data.hotelProfile
-              this.$store.commit('setHotelProfile', {
-                name,
-                province,
-                city,
-                district,
-                address,
-              })
-              this.$message.success(res.data.msg)
-              this.active++
+              this.$store.commit('setHotelLogin')
+              this.$message.success('酒店注册成功')
+              this.step++
             } else {
               this.$message.error(res.data.msg)
             }
@@ -525,28 +512,46 @@ export default {
           })
       })
     },
-    handleUploadSuccess(res, file) {
-      this.sellerSignUpForm.license = res.fileName
+    handleChange(file) {
+      this.sellerSignUpForm.license = file.raw
       this.imgURL = URL.createObjectURL(file.raw)
     },
-    beforeUpload(file) {
-      const isJPG = file.type === 'image/jpeg' || file.type === 'image/png'
-      const isLt2M = file.size / 1024 / 1024 < 1
-
-      if (!isJPG) {
-        this.$message.error('上传头像图片只能是 JPG 格式!')
-      }
-      if (!isLt2M) {
-        this.$message.error('上传头像图片大小不能超过 1MB!')
-      }
-      return isJPG && isLt2M
+    handleRemove() {
+      this.sellerSignUpForm.license = ''
+      this.imgURL = ''
+    },
+    handlePreview() {
+      this.dialogVisable = true
     },
     loginNow() {
-      if (this.selectedUserType === '商家') {
+      if (this.selectedUserType === 'seller') {
         this.$router.replace('/seller')
       } else {
         this.$router.replace('/hotel')
       }
+    },
+    getProvinces() {
+      this.$http
+        .get('https://restapi.amap.com/v3/config/district', {
+          params: {
+            key: process.env.VUE_APP_AMAPKEY,
+            keywords: name,
+            subdistrict: '1',
+          },
+        })
+        .then((res) => {
+          if (res.data.infocode === '10000') {
+            this.provinces = res.data.districts[0].districts.map((p) => {
+              return p.name
+            })
+          } else {
+            this.$message.error(res.data.info)
+          }
+        })
+        .catch((err) => {
+          this.$message.error('网络存在异常，省级列表无法获取')
+          throw err
+        })
     },
     getCities(name) {
       //name是省的名称
@@ -605,28 +610,7 @@ export default {
     },
   },
   mounted() {
-    //挂载时获取省级行政区
-    this.$http
-      .get('https://restapi.amap.com/v3/config/district', {
-        params: {
-          key: process.env.VUE_APP_AMAPKEY,
-          keywords: name,
-          subdistrict: '1',
-        },
-      })
-      .then((res) => {
-        if (res.data.infocode === '10000') {
-          this.provinces = res.data.districts[0].districts.map((p) => {
-            return p.name
-          })
-        } else {
-          this.$message.error(res.data.info)
-        }
-      })
-      .catch((err) => {
-        this.$message.error('网络存在异常，省级列表无法获取')
-        throw err
-      })
+    this.getProvinces()
   },
 }
 </script>
@@ -641,27 +625,5 @@ export default {
   border-radius: 4px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   width: 370px;
-}
-.license-uploader >>> .el-upload {
-  border: 1px dashed #d9d9d9;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-.license-uploader >>> .el-upload:hover {
-  border-color: #409eff;
-}
-.license-uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
-  width: 178px;
-  height: 178px;
-  line-height: 178px;
-  text-align: center;
-}
-.license {
-  width: 178px;
-  display: block;
 }
 </style>

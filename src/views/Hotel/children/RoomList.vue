@@ -1,29 +1,33 @@
 <template>
-  <div class="room-list">
+  <div class="list">
     <el-button style="margin-bottom:20px;" @click="goToRoomEdit('new')">添加房间</el-button>
-    <el-card class="title">
+
+    <!-- 表头 -->
+    <el-card class="list-title">
       <el-row :gutter="20">
-        <el-col :span="6" style="text-align:center">房间</el-col>
-        <el-col :span="3">价格</el-col>
-        <el-col :span="6">信息</el-col>
-        <el-col :span="3">剩余数量</el-col>
-        <el-col :span="3">上架状态</el-col>
-        <el-col :span="3">操作</el-col>
+        <el-col :span="7" style="text-align:center">房间</el-col>
+        <el-col :span="5">房间信息</el-col>
+        <el-col :span="2">价格</el-col>
+        <el-col :span="2">房间数量</el-col>
+        <el-col :span="2">上架状态</el-col>
+        <el-col :span="2">操作</el-col>
       </el-row>
     </el-card>
-    <el-card v-for="i in 6" :key="i" class="room-card">
-      <el-row class="body" :gutter="20">
-        <el-col :span="3">
-          <img :src="img" alt class="img" />
+
+    <!-- 列表 -->
+    <el-card v-for="room in roomList" :key="room._id" class="list-card">
+      <el-row class="list-card-body" :gutter="20">
+        <el-col :span="4">
+          <img :src="imgURL(room.imgSrc)" alt class="list-card-img" />
         </el-col>
-        <el-col :span="3">roomName</el-col>
-        <el-col :span="3">roomPrice</el-col>
-        <el-col :span="6">roomInformation</el-col>
-        <el-col :span="3">roomStock</el-col>
-        <el-col :span="3">state</el-col>
-        <el-col :span="3">
-          <el-link @click="goToRoomEdit('123')">编辑</el-link>
-          <el-link style="margin-left:20px">删除</el-link>
+        <el-col :span="3">{{room.name}}</el-col>
+        <el-col :span="5">{{room.information}}</el-col>
+        <el-col :span="2">{{room.price}}</el-col>
+        <el-col :span="2">{{room.stock}}</el-col>
+        <el-col :span="2">{{room.onSale?'上架':'下架'}}</el-col>
+        <el-col :span="2">
+          <el-link @click="goToRoomEdit(room._id)">编辑</el-link>
+          <el-link style="margin-left:20px" @click="deleteRoom(room._id)">删除</el-link>
         </el-col>
       </el-row>
     </el-card>
@@ -35,34 +39,91 @@ export default {
   name: 'HotelRoom',
   data() {
     return {
-      img: '',
+      roomList: [],
     }
   },
   methods: {
+    token() {
+      return localStorage.getItem('token')
+    },
+    imgURL(imgSrc) {
+      return process.env.VUE_APP_SERVER_URL + '/public/' + imgSrc
+    },
     goToRoomEdit(id) {
       this.$router.push({ name: 'room-edit', params: { id } })
     },
+    getRoomList() {
+      this.$http
+        .post(
+          '/room/manage',
+          {},
+          {
+            headers: { Authorization: `Bearer ${this.token()}` },
+          }
+        )
+        .then((res) => {
+          if (res.data.state === 1) {
+            this.roomList = res.data.roomList
+          } else {
+            this.$message.error(res.data.msg)
+          }
+        })
+        .catch((err) => {
+          this.$message.error('网络错误')
+          throw err
+        })
+    },
+    deleteRoom(id) {
+      this.$http
+        .post(
+          '/room/delete',
+          { room_id: id },
+          {
+            headers: { Authorization: `Bearer ${this.token()}` },
+          }
+        )
+        .then((res) => {
+          if (res.data.state === 1) {
+            this.$message.success(res.data.msg)
+            const index = this.roomList.findIndex((item) => {
+              return item._id === id
+            })
+            this.roomList.splice(index, 1)
+          } else {
+            this.$message.error(res.data.msg)
+          }
+        })
+        .catch((err) => {
+          this.$message.error('网络错误')
+          throw err
+        })
+    },
+  },
+  mounted() {
+    this.getRoomList()
   },
 }
 </script>
 
 <style scoped>
-.room-list {
-  min-width: 1002px;
+.list {
+  width: 1200px;
 }
-.room-list .title {
-  font-size: 12px;
+.list-title {
+  font-size: 14px;
   margin-bottom: 20px;
+  position: sticky;
+  top: -20px;
+  z-index: 1;
 }
-.room-card {
+.list-card {
   margin-bottom: 20px;
   font-size: 12px;
 }
-.room-card .img {
-  width: 100px;
-  height: 100px;
+.list-card-img {
+  width: 100%;
 }
-.room-card .body {
+.list-card-body {
   word-break: break-all;
 }
 </style>
