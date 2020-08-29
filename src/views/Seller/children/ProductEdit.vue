@@ -130,7 +130,7 @@ export default {
       }
     },
     handleUploadError() {
-      this.$message('网络错误图片上传失败')
+      this.$message('网络错误，图片上传失败')
     },
     handlePictureCardPreview(file) {
       this.dialogVisible = true
@@ -165,7 +165,7 @@ export default {
               this.$message.success('成功编辑了商品')
               this.$router.go(-1)
             } else {
-              this.$message.error(res.data.err)
+              this.$message.error(res.data.msg)
             }
           })
           .catch((err) => {
@@ -175,9 +175,7 @@ export default {
       })
     },
     getProdcutInfo() {
-      let config = {
-        headers: { Authorization: `Bearer ${this.token()}` },
-      }
+      let config = { headers: { Authorization: `Bearer ${this.token()}` } }
       this.$http
         .post('/product', { product_id: this.$route.params.id }, config)
         .then((res) => {
@@ -200,15 +198,15 @@ export default {
     },
     beforeUpload(file) {
       const fileType = file.type === 'image/jpeg' || file.type === 'image/png'
-      const isLt2M = file.size / 1024 / 1024 < 1
+      const isLt1M = file.size / 1024 / 1024 < 1
 
       if (!fileType) {
         this.$message.error('上传头像图片只能是 .jpg .jpeg .png 格式!')
       }
-      if (!isLt2M) {
+      if (!isLt1M) {
         this.$message.error('上传头像图片大小不能超过 1MB!')
       }
-      return fileType && isLt2M
+      return fileType && isLt1M
     },
   },
   mounted() {

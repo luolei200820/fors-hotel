@@ -6,7 +6,7 @@
     <el-card class="list-title">
       <el-row :gutter="20">
         <el-col :span="7" style="text-align:center">房间</el-col>
-        <el-col :span="5">房间信息</el-col>
+        <el-col :span="4">房间信息</el-col>
         <el-col :span="2">价格</el-col>
         <el-col :span="2">房间数量</el-col>
         <el-col :span="2">上架状态</el-col>
@@ -21,7 +21,7 @@
           <img :src="imgURL(room.imgSrc)" alt class="list-card-img" />
         </el-col>
         <el-col :span="3">{{room.name}}</el-col>
-        <el-col :span="5">{{room.information}}</el-col>
+        <el-col :span="4">{{room.information}}</el-col>
         <el-col :span="2">{{room.price}}</el-col>
         <el-col :span="2">{{room.stock}}</el-col>
         <el-col :span="2">{{room.onSale?'上架':'下架'}}</el-col>
@@ -36,7 +36,7 @@
 
 <script>
 export default {
-  name: 'HotelRoom',
+  name: 'RoomList',
   data() {
     return {
       roomList: [],
@@ -53,14 +53,9 @@ export default {
       this.$router.push({ name: 'room-edit', params: { id } })
     },
     getRoomList() {
+      let config = { headers: { Authorization: `Bearer ${this.token()}` } }
       this.$http
-        .post(
-          '/room/manage',
-          {},
-          {
-            headers: { Authorization: `Bearer ${this.token()}` },
-          }
-        )
+        .post('/room/manage', {}, config)
         .then((res) => {
           if (res.data.state === 1) {
             this.roomList = res.data.roomList
@@ -74,17 +69,13 @@ export default {
         })
     },
     deleteRoom(id) {
+      let config = { headers: { Authorization: `Bearer ${this.token()}` } }
       this.$http
-        .post(
-          '/room/delete',
-          { room_id: id },
-          {
-            headers: { Authorization: `Bearer ${this.token()}` },
-          }
-        )
+        .post('/room/delete', { room_id: id }, config)
         .then((res) => {
           if (res.data.state === 1) {
             this.$message.success(res.data.msg)
+            //删除data中的房间
             const index = this.roomList.findIndex((item) => {
               return item._id === id
             })
@@ -107,7 +98,7 @@ export default {
 
 <style scoped>
 .list {
-  width: 1200px;
+  width: 1100px;
 }
 .list-title {
   font-size: 14px;

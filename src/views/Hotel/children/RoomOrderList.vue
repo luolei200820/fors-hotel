@@ -65,19 +65,14 @@ export default {
     },
   },
   mounted() {
+    let config = { headers: { Authorization: `Bearer ${this.token()}` } }
     this.$http
-      .post(
-        '/roomOrder/manage',
-        {},
-        {
-          headers: { Authorization: `Bearer ${this.token()}` },
-        }
-      )
+      .post('/roomOrder/manage', {}, config)
       .then((res) => {
         if (res.data.state === 1) {
           this.roomOrders = res.data.roomOrders
         } else {
-          this.$message.error('获取菜品订单失败')
+          this.$message.error(res.data.msg)
         }
       })
       .catch((err) => {

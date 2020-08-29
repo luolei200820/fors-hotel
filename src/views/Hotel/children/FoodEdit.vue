@@ -125,7 +125,7 @@ export default {
             this.foodEditForm = res.data.food
             this.imgURL = `${process.env.VUE_APP_SERVER_URL}/public/${res.data.food.imgSrc}`
           } else {
-            this.$message.error(res.data.err)
+            this.$message.error(res.data.msg)
           }
         })
         .catch((err) => {
@@ -152,7 +152,7 @@ export default {
               this.$message.success(successMsg)
               this.$router.go(-1)
             } else {
-              this.$message.error(res.data.err)
+              this.$message.error(res.data.msg)
             }
           })
           .catch((err) => {

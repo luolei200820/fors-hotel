@@ -130,7 +130,7 @@ export default {
             this.hotelEditInfoForm = res.data.hotelProfile
             this.hotelOriginalName = res.data.hotelProfile.name
           } else {
-            this.$message.error(res.data.err)
+            this.$message.error(res.data.msg)
           }
         })
         .catch((err) => {
@@ -161,7 +161,7 @@ export default {
             }
           })
           .catch((err) => {
-            this.$message.error('网络存在异常，省级列表无法获取')
+            this.$message.error('网络存在异常，获取省级列表失败')
             reject(err)
             throw err
           })

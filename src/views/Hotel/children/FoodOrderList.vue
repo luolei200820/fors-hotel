@@ -4,13 +4,13 @@
     <el-card class="list-title">
       <el-row :gutter="20">
         <el-col :span="7" style="text-align:center">菜品</el-col>
-        <el-col :span="5">菜品信息</el-col>
+        <el-col :span="4">菜品信息</el-col>
         <el-col :span="2">价格</el-col>
         <el-col :span="2">数量</el-col>
         <el-col :span="2">总价</el-col>
         <el-col :span="2">支付状态</el-col>
         <el-col :span="2">客户名称</el-col>
-        <el-col :span="2">客户电话</el-col>
+        <el-col :span="3">客户电话</el-col>
       </el-row>
     </el-card>
 
@@ -25,13 +25,13 @@
           <img :src="imgURL(foodOrder.food.imgSrc)" alt class="list-card-img" />
         </el-col>
         <el-col :span="3">{{foodOrder.food.name}}</el-col>
-        <el-col :span="5">{{foodOrder.food.information}}</el-col>
+        <el-col :span="4">{{foodOrder.food.information}}</el-col>
         <el-col :span="2">{{foodOrder.food.price}}</el-col>
         <el-col :span="2">{{foodOrder.quantity}}</el-col>
         <el-col :span="2">{{foodOrder.totalPrice}}</el-col>
         <el-col :span="2">{{foodOrder.state}}</el-col>
         <el-col :span="2">{{foodOrder.user.name}}</el-col>
-        <el-col :span="2">{{foodOrder.user.phone}}</el-col>
+        <el-col :span="3">{{foodOrder.user.phone}}</el-col>
       </el-row>
     </el-card>
   </div>
@@ -63,19 +63,14 @@ export default {
     },
   },
   mounted() {
+    let config = { headers: { Authorization: `Bearer ${this.token()}` } }
     this.$http
-      .post(
-        '/foodOrder/manage',
-        {},
-        {
-          headers: { Authorization: `Bearer ${this.token()}` },
-        }
-      )
+      .post('/foodOrder/manage', {},config)
       .then((res) => {
         if (res.data.state === 1) {
           this.foodOrders = res.data.foodOrders
         } else {
-          this.$message.error('获取菜品订单失败')
+          this.$message.error(res.data.msg)
         }
       })
       .catch((err) => {
@@ -88,7 +83,7 @@ export default {
 
 <style scoped>
 .list {
-  width: 1200px;
+  width: 1100px;
 }
 .list-title {
   font-size: 14px;
