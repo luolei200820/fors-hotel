@@ -11,13 +11,13 @@
         <el-input v-model="foodEditForm.name"></el-input>
       </el-form-item>
       <el-form-item label="菜品价格" prop="price">
-        <el-input v-model.number="foodEditForm.price"></el-input>
+        <el-input v-model="foodEditForm.price"></el-input>
       </el-form-item>
       <el-form-item label="菜品信息" prop="information">
         <el-input v-model="foodEditForm.information"></el-input>
       </el-form-item>
       <el-form-item label="库存" prop="stock">
-        <el-input v-model.number="foodEditForm.stock"></el-input>
+        <el-input-number v-model="foodEditForm.stock" :min="1" :max="2000"></el-input-number>
       </el-form-item>
       <el-form-item label="是否上架" prop="onSale">
         <el-switch v-model="foodEditForm.onSale"></el-switch>
@@ -27,18 +27,20 @@
         <el-upload
           ref="uploader"
           v-if="!imgURL"
-          action="#"
-          :auto-upload="false"
+          :action="actionURL()"
+          :headers="{Authorization: 'Bearer ' + token()}"
           list-type="picture-card"
           :show-file-list="false"
           :on-change="handleChange"
+          :before-upload="beforeUpload"
+          :on-success="handleUploadSuccess"
           accept=".png, .jpg, .jpeg"
-          name="license"
+          name="image"
         >
           <i class="el-icon-plus"></i>
         </el-upload>
 
-        <!-- 选择文件之后隐藏上传控件 -->
+        <!-- 选择文件之后上传图片，隐藏上传控件 -->
         <div v-else class="el-upload-list el-upload-list--picture-card">
           <div class="el-upload-list__item is-success">
             <img :src="imgURL" width="100%" />
@@ -62,7 +64,7 @@
         </el-dialog>
       </el-form-item>
       <el-form-item>
-        <el-button @click="addOrEdit==='add'?addFood('foodEditForm'):editFood('foodEditForm')">提交</el-button>
+        <el-button>提交</el-button>
         <el-button @click="$router.go(-1)">返回</el-button>
       </el-form-item>
     </el-form>
@@ -82,11 +84,12 @@ export default {
       } else callback()
     }
     return {
+      imgURL: '',
       foodEditForm: {
         name: '',
         price: '',
         information: '',
-        stock: '',
+        stock: 1,
         onSale: true,
         imgSrc: '',
       },
@@ -95,9 +98,6 @@ export default {
         price: [{ required: true, message: priceValidator, trigger: 'blur' }],
         information: [
           { required: true, message: '菜品描述不能为空', trigger: 'blur' },
-        ],
-        stock: [
-          { required: true, message: '请输入菜品库存数量', trigger: 'blur' },
         ],
         imgSrc: [
           { required: true, message: '请上传菜品图片', trigger: 'blur' },
@@ -110,44 +110,34 @@ export default {
     actionURL() {
       return process.env.VUE_APP_SERVER_URL + '/album/upload'
     },
-    imgURL(imgSrc) {
-      return process.env.VUE_APP_SERVER_URL + '/public/' + imgSrc
-    },
     token() {
       return localStorage.getItem('token')
     },
-    addFood(formName) {
-      this.$refs[formName].validate((valid) => {
-        if (!valid) return
-        this.$http
-          .post('/food/add', this.foodEditForm, {
-            headers: { Authorization: `Bearer ${this.token()}` },
-          })
-          .then((res) => {
-            if (res.data.state === 1) {
-              this.$message.success(res.data.msg)
-              this.$router.go(-1)
-            } else {
-              this.$message.error('添加商品失败')
-            }
-          })
-          .catch((err) => {
-            this.$message.error('网络错误')
-            throw err
-          })
-      })
+    //获取菜品信息用于编辑
+    getFoodInfo(food_id) {
+      this.$http
+        .get('/food', { params: { food_id } })
+        .then((res) => {
+          if (res.data.state === 1) {
+          } else {
+            this.$message.error(res.data.msg)
+          }
+        })
+        .catch((err) => {
+          this.$message.error('网络错误')
+          throw err
+        })
     },
-    editFood(formName) {
-      this.$refs[formName].validate((valid) => {
+    //添加菜品
+    addFood() {
+      this.$refs.foodEditForm.validate((valid) => {
         if (!valid) return
-        this.foodEditForm.food_id = this.$route.params.id
+        let config = { headers: { Authorization: `Bearer ${this.token()}` } }
         this.$http
-          .post('/food/edit', this.foodEditForm, {
-            headers: { Authorization: `Bearer ${this.token()}` },
-          })
+          .post('/food/add', this.foodEditForm, config)
           .then((res) => {
             if (res.data.state === 1) {
-              this.$message.success(res.data.msg)
+              this.$message.success('添加菜品成功')
               this.$router.go(-1)
             } else {
               this.$message.error(res.data.msg)
@@ -159,52 +149,32 @@ export default {
           })
       })
     },
-    getFoodInfo(food_id) {
-      this.$http
-        .get('/food', { params: { food_id } })
-        .then((res) => {
-          if (res.data.state === 1) {
-            let {
-              name,
-              price,
-              imgSrc,
-              information,
-              stock,
-              onSale,
-            } = res.data.food
-            this.foodEditForm.name = name
-            this.foodEditForm.price = price
-            this.foodEditForm.imgSrc = imgSrc
-            this.foodEditForm.information = information
-            this.foodEditForm.stock = stock
-            this.foodEditForm.onSale = onSale
-          } else {
-            this.$message.error(res.data.msg)
-          }
-        })
-        .catch((err) => {
-          this.$message.error('网络错误')
-          throw err
-        })
+    //从本地文件里生成预览
+    handleChange(file) {
+      this.imgURL = URL.createObjectURL(file.raw)
     },
-    handleUploadSuccess(res) {
-      this.foodEditForm.imgSrc = res.fileName
-    },
+    //上传前检查文件是否符合规格
     beforeUpload(file) {
       const fileType = file.type === 'image/jpeg' || file.type === 'image/png'
-      const isLt2M = file.size / 1024 / 1024 < 1
+      const isLt1M = file.size / 1024 / 1024 < 1
 
       if (!fileType) {
         this.$message.error('上传头像图片只能是 .jpg .jpeg .png 格式!')
       }
-      if (!isLt2M) {
+      if (!isLt1M) {
         this.$message.error('上传头像图片大小不能超过 1MB!')
       }
-      return fileType && isLt2M
+      return fileType && isLt1M
+    },
+    //将后端返回的文件名赋值给foodEditForm.imgSrc
+    handleUploadSuccess(res) {
+      this.foodEditForm.imgSrc = res.filename
     },
   },
   mounted() {
-    
+    if (this.$route.params.id !== 'new') {
+      this.getFoodInfo(this.$route.params.id)
+    }
   },
 }
 </script>
@@ -215,27 +185,5 @@ export default {
   padding: 25px;
   border-radius: 4px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-.uploader >>> .el-upload {
-  border: 1px dashed #d9d9d9;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-.uploader >>> .el-upload:hover {
-  border-color: #409eff;
-}
-.uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
-  width: 178px;
-  height: 178px;
-  line-height: 178px;
-  text-align: center;
-}
-.uploader-img {
-  width: 178px;
-  display: block;
 }
 </style>
