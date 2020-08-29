@@ -15,7 +15,6 @@
     </el-card>
 
     <!-- 列表 -->
-    <!-- <h1 v-if="foodsList.length===0">还没有任何菜品</h1> -->
     <el-card v-for="food in foodsList" :key="food._id" class="list-card">
       <el-row class="list-card-body" :gutter="20">
         <el-col :span="4">
@@ -37,7 +36,7 @@
 
 <script>
 export default {
-  name: 'HotelFood',
+  name: 'FoodList',
   data() {
     return {
       foodsList: [],
@@ -48,21 +47,15 @@ export default {
     token() {
       return localStorage.getItem('token')
     },
+    //计算获取图片URL地址
     imgURL(imgSrc) {
       return process.env.VUE_APP_SERVER_URL + '/public/' + imgSrc
     },
-    goToFoodEdit(id) {
-      this.$router.push({ name: 'food-edit', params: { id } })
-    },
+    //获取菜品列表
     getFoodsList() {
+      let config = { headers: { Authorization: `Bearer ${this.token()}` } }
       this.$http
-        .post(
-          '/food/manage',
-          {},
-          {
-            headers: { Authorization: `Bearer ${this.token()}` },
-          }
-        )
+        .post('/food/manage', {}, config)
         .then((res) => {
           this.foodsList = res.data.foodsList
         })
@@ -70,15 +63,19 @@ export default {
           throw err
         })
     },
+    //点击编辑菜品
+    goToFoodEdit(id) {
+      this.$router.push({ name: 'food-edit', params: { id } })
+    },
+    //点击删除菜品
     deleteFood(id) {
-      let config = {
-        headers: { Authorization: `Bearer ${this.token()}` },
-      }
+      let config = { headers: { Authorization: `Bearer ${this.token()}` } }
       this.$http
         .post('/food/delete', { food_id: id }, config)
         .then((res) => {
           if (res.data.state === 1) {
             this.$message.success(res.data.msg)
+            //删除data中的菜品
             const index = this.foodsList.findIndex((item) => {
               return item._id === id
             })

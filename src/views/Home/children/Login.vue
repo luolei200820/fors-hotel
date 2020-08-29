@@ -1,5 +1,5 @@
 <template>
-  <el-card shadow="hover" style="width:400px">
+  <el-card style="width:400px">
     <el-form ref="loginForm" :model="loginForm" :rules="rules" label-width="auto">
       <el-form-item label="手机号" prop="phone">
         <el-input v-model="loginForm.phone"></el-input>

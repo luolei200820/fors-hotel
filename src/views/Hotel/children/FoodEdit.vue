@@ -64,7 +64,7 @@
         </el-dialog>
       </el-form-item>
       <el-form-item>
-        <el-button>提交</el-button>
+        <el-button @click="submit">提交</el-button>
         <el-button @click="$router.go(-1)">返回</el-button>
       </el-form-item>
     </el-form>
@@ -85,6 +85,7 @@ export default {
     }
     return {
       imgURL: '',
+      dialogVisable: false,
       foodEditForm: {
         name: '',
         price: '',
@@ -95,7 +96,7 @@ export default {
       },
       foodEditFormRules: {
         name: [{ required: true, message: '请填写菜品名称', trigger: 'blur' }],
-        price: [{ required: true, message: priceValidator, trigger: 'blur' }],
+        price: [{ required: true, validator: priceValidator, trigger: 'blur' }],
         information: [
           { required: true, message: '菜品描述不能为空', trigger: 'blur' },
         ],
@@ -115,12 +116,16 @@ export default {
     },
     //获取菜品信息用于编辑
     getFoodInfo(food_id) {
+      let config = { headers: { Authorization: `Bearer ${this.token()}` } }
       this.$http
-        .get('/food', { params: { food_id } })
+        .post('/food', { food_id }, config)
         .then((res) => {
           if (res.data.state === 1) {
+            //放到foodEditForm和生成imgURL用于预览
+            this.foodEditForm = res.data.food
+            this.imgURL = `${process.env.VUE_APP_SERVER_URL}/public/${res.data.food.imgSrc}`
           } else {
-            this.$message.error(res.data.msg)
+            this.$message.error(res.data.err)
           }
         })
         .catch((err) => {
@@ -128,19 +133,26 @@ export default {
           throw err
         })
     },
-    //添加菜品
-    addFood() {
+    //添加/编辑菜品
+    submit() {
       this.$refs.foodEditForm.validate((valid) => {
         if (!valid) return
+        let path = '/food/add'
+        let successMsg = '添加菜品成功'
+        //如果是编辑菜品则修改路径和提示信息
+        if (this.$route.params.id !== 'new') {
+          path = '/food/edit'
+          successMsg = '编辑菜品信息成功'
+        }
         let config = { headers: { Authorization: `Bearer ${this.token()}` } }
         this.$http
-          .post('/food/add', this.foodEditForm, config)
+          .post(path, this.foodEditForm, config)
           .then((res) => {
             if (res.data.state === 1) {
-              this.$message.success('添加菜品成功')
+              this.$message.success(successMsg)
               this.$router.go(-1)
             } else {
-              this.$message.error(res.data.msg)
+              this.$message.error(res.data.err)
             }
           })
           .catch((err) => {
@@ -169,6 +181,13 @@ export default {
     //将后端返回的文件名赋值给foodEditForm.imgSrc
     handleUploadSuccess(res) {
       this.foodEditForm.imgSrc = res.filename
+    },
+    handleRemove() {
+      this.foodEditForm.imgSrc = ''
+      this.imgURL = ''
+    },
+    handlePreview() {
+      this.dialogVisable = true
     },
   },
   mounted() {
