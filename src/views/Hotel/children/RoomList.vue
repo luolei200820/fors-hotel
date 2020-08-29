@@ -10,7 +10,7 @@
         <el-col :span="2">价格</el-col>
         <el-col :span="2">房间数量</el-col>
         <el-col :span="2">上架状态</el-col>
-        <el-col :span="2">操作</el-col>
+        <el-col :span="3">操作</el-col>
       </el-row>
     </el-card>
 
@@ -18,14 +18,14 @@
     <el-card v-for="room in roomList" :key="room._id" class="list-card">
       <el-row class="list-card-body" :gutter="20">
         <el-col :span="4">
-          <img :src="imgURL(room.imgSrc)" alt class="list-card-img" />
+          <img :src="imgURL(room.imgSrc[0])" alt class="list-card-img" />
         </el-col>
         <el-col :span="3">{{room.name}}</el-col>
         <el-col :span="4">{{room.information}}</el-col>
         <el-col :span="2">{{room.price}}</el-col>
         <el-col :span="2">{{room.stock}}</el-col>
         <el-col :span="2">{{room.onSale?'上架':'下架'}}</el-col>
-        <el-col :span="2">
+        <el-col :span="3">
           <el-link @click="goToRoomEdit(room._id)">编辑</el-link>
           <el-link style="margin-left:20px" @click="deleteRoom(room._id)">删除</el-link>
         </el-col>

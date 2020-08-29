@@ -91,7 +91,7 @@ export default {
         price: '',
         information: '',
         stock: 1,
-        onSale: true,
+        onSale: false,
         imgSrc: '',
       },
       foodEditFormRules: {

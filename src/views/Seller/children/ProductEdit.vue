@@ -81,7 +81,7 @@ export default {
         price: '',
         information: '',
         stock: 1,
-        onSale: true,
+        onSale: false,
         category: '',
         imgSrc: [],
       },
@@ -137,7 +137,9 @@ export default {
       this.dialogImageUrl = URL.createObjectURL(file.raw)
     },
     handleRemove(file) {
-      //此时图片已经上传到了服务器，从imgSrc中删掉，再在数据库中保存即可
+      //若是添加商品时删除图片则是从file.response中找到索引
+      //若是编辑商品时删除图片则是从fileList中找到索引
+      //fileList需要在mounted获取商品信息时映射
       if (this.$route.params.id === 'new') {
         let index = this.productEditForm.imgSrc.findIndex((filename) => {
           return filename === file.response.filename
@@ -181,10 +183,11 @@ export default {
         .then((res) => {
           if (res.data.state === 1) {
             this.productEditForm = res.data.product
+            //映射fileList，并且回显
             res.data.product.imgSrc.forEach((filename) => {
               this.fileList.push({
                 name: filename,
-                url: process.env.VUE_APP_SERVER_URL + '/public/' + filename,
+                url: `${process.env.VUE_APP_SERVER_URL}/public/${filename}`,
               })
             })
           } else {

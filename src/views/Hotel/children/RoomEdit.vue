@@ -11,7 +11,7 @@
         <el-input v-model="roomEditForm.name"></el-input>
       </el-form-item>
       <el-form-item label="房间价格" prop="price">
-        <el-input v-model.number="roomEditForm.price"></el-input>
+        <el-input v-model="roomEditForm.price"></el-input>
       </el-form-item>
       <el-form-item label="房间信息" prop="information">
         <el-input v-model="roomEditForm.information"></el-input>
@@ -47,7 +47,7 @@
         </el-dialog>
       </el-form-item>
       <el-form-item>
-        <el-button>提交</el-button>
+        <el-button @click="submit">提交</el-button>
         <el-button @click="$router.go(-1)">返回</el-button>
       </el-form-item>
     </el-form>
@@ -75,8 +75,8 @@ export default {
         price: '',
         information: '',
         stock: 0,
-        onSale: true,
-        imgSrc: '',
+        onSale: false,
+        imgSrc: [],
       },
       roomEditFormRules: {
         name: [{ required: true, message: '请填写菜品名称', trigger: 'blur' }],
@@ -96,15 +96,24 @@ export default {
     token() {
       return localStorage.getItem('token')
     },
-    addRoom() {
+    submit() {
+      let config = { headers: { Authorization: `Bearer ${this.token()}` } }
+      let path = ''
+      let successMsg = ''
+      if (this.$route.params.id === 'new') {
+        path = '/room/add'
+        successMsg = '房间添加成功'
+      } else {
+        path = '/room/edit'
+        successMsg = '房间编辑成功'
+      }
       this.$refs.roomEditForm.validate((valid) => {
         if (!valid) return
-        let config = { headers: { Authorization: `Bearer ${this.token()}` } }
         this.$http
-          .post('/room/add', this.roomEditForm, config)
+          .post(path, this.roomEditForm, config)
           .then((res) => {
             if (res.data.state === 1) {
-              this.$message.success(res.data.msg)
+              this.$message.success(successMsg)
               this.$router.go(-1)
             } else {
               this.$message.error(res.data.msg)
@@ -130,6 +139,19 @@ export default {
       this.dialogVisible = true
       this.dialogImageUrl = URL.createObjectURL(file.raw)
     },
+    handleRemove(file) {
+      if (this.$route.params.id === 'new') {
+        let index = this.roomEditForm.imgSrc.findIndex((filename) => {
+          return filename === file.response.filename
+        })
+        this.roomEditForm.imgSrc.splice(index, 1)
+      } else {
+        let index = this.roomEditForm.imgSrc.findIndex((filename) => {
+          return filename === this.fileList.filename
+        })
+        this.roomEditForm.imgSrc.splice(index, 1)
+      }
+    },
     beforeUpload(file) {
       const fileType = file.type === 'image/jpeg' || file.type === 'image/png'
       const isLt1M = file.size / 1024 / 1024 < 1
@@ -142,8 +164,34 @@ export default {
       }
       return fileType && isLt1M
     },
+    getRoomInfo() {
+      let config = { headers: { Authorization: `Bearer ${this.token()}` } }
+      this.$http
+        .post('/room', { room_id: this.$route.params.id }, config)
+        .then((res) => {
+          if (res.data.state === 1) {
+            this.roomEditForm = res.data.room
+            res.data.room.imgSrc.forEach((filename) => {
+              this.fileList.push({
+                name: filename,
+                url: `${process.env.VUE_APP_SERVER_URL}/public/${filename}`,
+              })
+            })
+          } else {
+            this.$message.error(res.data.msg)
+          }
+        })
+        .catch((err) => {
+          this.$message.error('网络错误')
+          throw err
+        })
+    },
   },
-  mounted() {},
+  mounted() {
+    if (this.$route.params.id !== 'new') {
+      this.getRoomInfo()
+    }
+  },
 }
 </script>
 
