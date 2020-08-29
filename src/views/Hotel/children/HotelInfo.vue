@@ -55,7 +55,7 @@ export default {
     var checkHotelName = (rule, value, callback) => {
       if (!value) {
         return callback(new Error('请输入酒店名称'))
-      } else if (value === this.hotelOriginalName) {
+      } else if (value === this.originalName) {
         callback()
       } else {
         this.$http
@@ -81,7 +81,7 @@ export default {
         district: '',
         address: '',
       },
-      hotelOriginalName: '',
+      originalName: '',
       hotelEditInfoFormRules: {
         name: [{ required: true, validator: checkHotelName, trigger: 'blur' }],
         province: [{ required: true, message: '请选择省份', trigger: 'blur' }],
@@ -110,6 +110,8 @@ export default {
           .post('/hotel/edit-profile', this.hotelEditInfoForm, config)
           .then((res) => {
             if (res.data.state === 1) {
+              //修改originalName
+              this.originalName = this.hotelEditInfoForm.name
               this.$message.success('修改成功')
             } else {
               this.$message.error(res.data.msg)
@@ -128,7 +130,7 @@ export default {
         .then(async (res) => {
           if (res.data.state === 1) {
             this.hotelEditInfoForm = res.data.hotelProfile
-            this.hotelOriginalName = res.data.hotelProfile.name
+            this.originalName = res.data.hotelProfile.name
           } else {
             this.$message.error(res.data.msg)
           }

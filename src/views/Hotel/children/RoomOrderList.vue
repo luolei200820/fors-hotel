@@ -85,7 +85,7 @@ export default {
 
 <style scoped>
 .list {
-  width: 1200px;
+  width: 1100px;
 }
 .list-title {
   font-size: 14px;

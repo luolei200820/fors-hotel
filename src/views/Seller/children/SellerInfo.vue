@@ -179,6 +179,8 @@ export default {
           .post('/seller/edit-profile', this.sellerInfoForm, config)
           .then((res) => {
             if (res.data.state === 1) {
+              //修改originalName
+              this.originalName = this.sellerInfoForm.name
               this.$message.success('修改成功')
             } else {
               this.$message.error(res.data.msg)
