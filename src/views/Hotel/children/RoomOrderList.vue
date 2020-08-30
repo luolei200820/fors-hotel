@@ -2,12 +2,12 @@
   <div class="list">
     <el-card class="list-title">
       <el-row :gutter="20">
-        <el-col :span="7" style="text-align:center">房间</el-col>
+        <el-col :span="6" style="text-align:center">房间</el-col>
         <el-col :span="3">房间信息</el-col>
         <el-col :span="3">入住时间</el-col>
         <el-col :span="2">价格/每晚</el-col>
         <el-col :span="2">总天数</el-col>
-        <el-col :span="1">总价</el-col>
+        <el-col :span="2">总价</el-col>
         <el-col :span="2">支付状态</el-col>
         <el-col :span="2">客户名称</el-col>
         <el-col :span="2">手机号码</el-col>
@@ -19,7 +19,7 @@
         <span style="margin-left:40px">订单编号：{{roomOrder._id}}</span>
       </div>
       <el-row class="list-card-body" :gutter="20">
-        <el-col :span="4">
+        <el-col :span="3">
           <img :src="imgURL(roomOrder.room.imgSrc)" alt class="list-card-img" />
         </el-col>
         <el-col :span="3">{{roomOrder.room.name}}</el-col>
@@ -27,7 +27,7 @@
         <el-col :span="3">{{DateTimeFormatter(roomOrder.startDate)}}</el-col>
         <el-col :span="2">{{roomOrder.room.price}}</el-col>
         <el-col :span="2">{{calcDays(roomOrder.startDate,roomOrder.endDate)}}</el-col>
-        <el-col :span="1">{{roomOrder.totalPrice}}</el-col>
+        <el-col :span="2">{{roomOrder.totalPrice}}</el-col>
         <el-col :span="2">{{roomOrder.state}}</el-col>
         <el-col :span="2">{{roomOrder.user.name}}</el-col>
         <el-col :span="2">{{roomOrder.user.phone}}</el-col>

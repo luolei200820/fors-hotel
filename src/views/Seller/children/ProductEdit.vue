@@ -134,7 +134,11 @@ export default {
     },
     handlePictureCardPreview(file) {
       this.dialogVisible = true
-      this.dialogImageUrl = URL.createObjectURL(file.raw)
+      if(this.$route.params.id==='new'){
+        this.dialogImageUrl = URL.createObjectURL(file.raw)
+      }else{
+        this.dialogImageUrl=file.url
+      }
     },
     handleRemove(file) {
       //若是添加商品时删除图片则是从file.response中找到索引

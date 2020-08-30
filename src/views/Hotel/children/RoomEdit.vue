@@ -137,7 +137,11 @@ export default {
     },
     handlePictureCardPreview(file) {
       this.dialogVisible = true
-      this.dialogImageUrl = URL.createObjectURL(file.raw)
+      if (this.$route.params.id === 'new') {
+        this.dialogImageUrl = URL.createObjectURL(file.raw)
+      } else {
+        this.dialogImageUrl = file.url
+      }
     },
     handleRemove(file) {
       if (this.$route.params.id === 'new') {
