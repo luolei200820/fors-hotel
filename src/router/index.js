@@ -40,7 +40,7 @@ const routes = [
   {
     path: '/seller',
     name: 'seller',
-    redirect: '/seller/product',
+    redirect: '/seller/info',
     component: Seller,
     children: [
       {

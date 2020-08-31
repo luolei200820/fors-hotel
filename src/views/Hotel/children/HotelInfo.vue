@@ -125,24 +125,29 @@ export default {
     },
     getHotelInfo() {
       let config = { headers: { Authorization: `Bearer ${this.token()}` } }
-      this.$http
-        .post('/hotel', {}, config)
-        .then(async (res) => {
-          if (res.data.state === 1) {
-            this.hotelEditInfoForm = res.data.hotelProfile
-            this.originalName = res.data.hotelProfile.name
-          } else {
-            this.$message.error(res.data.msg)
-          }
-        })
-        .catch((err) => {
-          this.$message.error('网络错误')
-          throw err
-        })
+      return new Promise((resolve, reject) => {
+        this.$http
+          .post('/hotel', {}, config)
+          .then(async (res) => {
+            if (res.data.state === 1) {
+              this.hotelEditInfoForm = res.data.hotelProfile
+              this.originalName = res.data.hotelProfile.name
+              resolve()
+            } else {
+              this.$message.error(res.data.msg)
+              reject(res.data.msg)
+            }
+          })
+          .catch((err) => {
+            this.$message.error('网络错误')
+            reject(err)
+            throw err
+          })
+      })
     },
     getProvinces() {
       //挂载时获取省级行政区
-      new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         this.$http
           .get('https://restapi.amap.com/v3/config/district', {
             params: {
@@ -171,7 +176,7 @@ export default {
     },
     getCities(name) {
       //name是省的名称
-      new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         this.$http
           .get('https://restapi.amap.com/v3/config/district', {
             params: {
@@ -203,7 +208,7 @@ export default {
     },
     getDistricts(name) {
       //name是市的名称
-      new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         this.$http
           .get('https://restapi.amap.com/v3/config/district', {
             params: {
@@ -232,9 +237,16 @@ export default {
       })
     },
   },
-  mounted() {
-    this.getHotelInfo()
+  async mounted() {
     this.getProvinces()
+    await this.getHotelInfo()
+    const province = this.hotelEditInfoForm.province
+    const city = this.hotelEditInfoForm.city
+    const district = this.hotelEditInfoForm.district
+    await this.getCities(province)
+    await this.getDistricts(city)
+    this.hotelEditInfoForm.city = city
+    this.hotelEditInfoForm.district = district
   },
 }
 </script>

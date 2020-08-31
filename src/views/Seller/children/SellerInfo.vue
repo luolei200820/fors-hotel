@@ -193,10 +193,8 @@ export default {
       })
     },
     getSellerProfile() {
-      let config = {
-        headers: { Authorization: `Bearer ${this.token()}` },
-      }
-      new Promise((resolve, reject) => {
+      let config = { headers: { Authorization: `Bearer ${this.token()}` } }
+      return new Promise((resolve, reject) => {
         this.$http
           .post('/seller', {}, config)
           .then((res) => {
@@ -223,7 +221,7 @@ export default {
     },
     getProvinces() {
       //挂载时获取省级行政区
-      new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         this.$http
           .get('https://restapi.amap.com/v3/config/district', {
             params: {
@@ -252,7 +250,7 @@ export default {
     },
     getCities(name) {
       //name是省的名称
-      new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         this.$http
           .get('https://restapi.amap.com/v3/config/district', {
             params: {
@@ -284,7 +282,7 @@ export default {
     },
     getDistricts(name) {
       //name是市的名称
-      new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         this.$http
           .get('https://restapi.amap.com/v3/config/district', {
             params: {
@@ -313,9 +311,16 @@ export default {
       })
     },
   },
-  mounted() {
-    this.getSellerProfile()
+  async mounted() {
     this.getProvinces()
+    await this.getSellerProfile()
+    const province = this.sellerInfoForm.province
+    const city = this.sellerInfoForm.city
+    const district = this.sellerInfoForm.district
+    await this.getCities(province)
+    await this.getDistricts(city)
+    this.sellerInfoForm.city = city
+    this.sellerInfoForm.district = district
   },
 }
 </script>
