@@ -26,7 +26,7 @@
         <el-col :span="2">{{product.category}}</el-col>
         <el-col :span="4">
           <el-link @click="goToProductEdit(product._id)">修改信息</el-link>
-          <el-link @click="dialogVisible=true" style="margin-left:10px">删除商品</el-link>
+          <el-link @click="deleteProduct(product._id)" style="margin-left:10px">删除商品</el-link>
         </el-col>
       </el-row>
     </el-card>
