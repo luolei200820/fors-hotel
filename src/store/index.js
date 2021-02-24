@@ -3,27 +3,15 @@ import Vuex from 'vuex'
 
 Vue.use(Vuex)
 
-export default new Vuex.Store({
-  state: {
-    isLogin: false,
-    userType: '',
-  },
-  mutations: {
-    setUserLogout(state) {
-      state.isLogin = false
-      state.userType = ''
+const store = new Vuex.Store({
+    state: {
+        productOrders: []
     },
-    setSellerLogin(state) {
-      state.isLogin = true
-      state.userType = 'seller'
-    },
-    setHotelLogin(state) {
-      state.isLogin = true
-      state.userType = 'hotel'
-    },
-  },
-  actions: {
-  },
-  modules: {
-  }
+    mutations: {
+        setProductOrder(state, payload) {
+            state.productOrders = payload
+        }
+    }
 })
+
+export default store
